@@ -1,0 +1,9 @@
+# Thư mục node_modules
+node_modules/
+
+# Tệp cấu hình cục bộ (ví dụ: .env)
+.env
+
+# Tệp log và tạm thời
+*.log
+*.tmp

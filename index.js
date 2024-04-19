@@ -1,54 +1,83 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const app=express();
+const mongoose = require('mongoose');
+const svModel = require('./svModel');
 
-const port=3001;
+const app = express();
+const port = 3001;
+const uri = 'mongodb+srv://legiahuy124578:Ck2S1Z9lvdZp0ebi@huy.0r5j3uq.mongodb.net/dealine';
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+  console.log(`Example app listening on port ${port}`);
 });
 
-const uri='mongodb+srv://legiahuy124578:Ck2S1Z9lvdZp0ebi@huy.0r5j3uq.mongodb.net/dealine';
+// Kết nối MongoDB
+async function connectDB() {
+  try {
+    await mongoose.connect(uri);
+    console.log('Connected to MongoDB');
+  } catch (error) {
+    console.error('Failed to connect to MongoDB:', error);
+  }
+}
 
-const mongoose = require('mongoose');
+// Middleware kết nối MongoDB
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
 
-const svModel = require('./svModel')
+// Lấy tất cả sinh viên
+app.get('/', async (req, res) => {
+  try {
+    const students = await svModel.find();
+    console.log(students);
+    res.send(students);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
-app.get('/',async (req,res) =>{
-  await mongoose.connect(uri); // ko co await thi ko lay dc du lieu
-
-  let sv = await svModel.find();
-
-  console.log(sv);
-
-  res.send(sv);
-})
-const ObjectId=require('mongoose').Types.ObjectId;
+// Xóa sinh viên dựa trên ID
 app.get('/:id', async (req, res) => {
- 
+  try {
+    const id = req.params.id;
+    console.log(id);
+    await svModel.deleteOne({ _id: id });
+    res.redirect('../');
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
-  let id = req.params.id;
-  console.log(id);
-  const objectId = new ObjectId(id);
-  await svModel.deleteOne({_id:objectId});
+// Thêm sinh viên mới
+app.post('/add', async (req, res) => {
+  try {
+    const newStudent = await svModel.create(req.body);
+    console.log(newStudent);
+    const students = await svModel.find();
+    res.send(students);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
-  res.redirect('../')
-}) 
-app.post('/add',async(req,res)=>{
-  await mongoose.connect(uri);
-
-  let kq=await svModel.create(req.body);
-  console.log(kq)
-
-  let svs = await svModel.find();
-  res.send(svs);
-})
-app.get('/update/:ten',async(req,res)=>{
-  let tenSV = req.params.ten;
-  let newName = "huy";
-  await svModel.updateOne({ten: tenSV},{name:newName})
-  let svs = await svModel.find();
-  res.send(svs);
-})
+// Cập nhật tên sinh viên
+app.get('/update/:ten', async (req, res) => {
+  try {
+    const { ten } = req.params;
+    const newName = 'huy';
+    await svModel.updateOne({ ten }, { name: newName });
+    const students = await svModel.find();
+    res.send(students);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
